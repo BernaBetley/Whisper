@@ -134,7 +134,7 @@ function App() {
             <span className="label">Audio file (max 50MB)</span>
             <input
               type="file"
-              accept="audio/*,.mp3,.mp4,.mpeg,.mpga,.m4a,.wav,.webm"
+              accept="audio/*,.mp3,.mp4,.mpeg,.mpga,.m4a,.wav,.webm,.aac,.ogg,.oga,.opus"
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
               disabled={isSubmitting}
             />
@@ -143,7 +143,7 @@ function App() {
                 Selected: <strong>{file.name}</strong> ({Math.round(file.size / 1024)} KB)
               </span>
             ) : (
-              <span className="hint">Supported: mp3, m4a, wav, webm, mp4.</span>
+              <span className="hint">Supported: mp3, m4a, wav, webm, mp4, ogg, opus, aac.</span>
             )}
           </label>
 
