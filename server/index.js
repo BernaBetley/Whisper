@@ -37,8 +37,7 @@ app.get("/api/health", (_req, res) => {
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    // Matches Audio API upload limit.
-    fileSize: 25 * 1024 * 1024,
+    fileSize: 50 * 1024 * 1024,
   },
 });
 

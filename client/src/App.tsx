@@ -131,7 +131,7 @@ function App() {
       <form className="panel" onSubmit={onSubmit}>
         <div className="grid">
           <label className="field">
-            <span className="label">Audio file (max 25MB)</span>
+            <span className="label">Audio file (max 50MB)</span>
             <input
               type="file"
               accept="audio/*,.mp3,.mp4,.mpeg,.mpga,.m4a,.wav,.webm"

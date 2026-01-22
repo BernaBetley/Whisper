@@ -4,7 +4,7 @@ const fsp = require("node:fs/promises");
 const os = require("node:os");
 const path = require("node:path");
 
-const MAX_FILE_BYTES = 25 * 1024 * 1024;
+const MAX_FILE_BYTES = 50 * 1024 * 1024;
 
 function guessAudioContentType(responseFormat) {
   switch (responseFormat) {
@@ -79,7 +79,7 @@ function parseMultipartToTempFile(req) {
         }
         await fileWritePromise;
         if (fileTooLarge) {
-          reject(new Error("File too large (max 25MB)."));
+          reject(new Error("File too large (max 50MB)."));
           return;
         }
         resolve({ fields, tmpPath, originalName });

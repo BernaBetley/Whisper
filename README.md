@@ -57,7 +57,7 @@ After deploy:
 
 ## Notes
 
-- Upload limit is **25MB**.
+- Upload limit is **50MB** (the app enforces this; upstream providers may still have their own limits).
 - Source language can be `auto`, a language name (e.g. `French`), or a short code like `en`, `es`, `pt-BR`.
 - The UI shows transcript/translation text only for reference (trimmed for header safety).
 
