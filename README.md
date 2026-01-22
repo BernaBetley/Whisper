@@ -41,6 +41,20 @@ npm run dev
 
 Open the UI and upload an audio file. After processing, click **Download** to save the translated audio.
 
+## Deploy to Vercel
+
+This repo includes Vercel Serverless Functions under `api/` and a `vercel.json` that builds the Vite app in `client/`.
+
+- **Set env var**: in Vercel project settings, add `OPENAI_API_KEY`.
+- **Deploy**: import the repo into Vercel and deploy (no extra config required).
+
+After deploy:
+
+- Frontend is served at `/`
+- API endpoints:
+  - `GET /api/health`
+  - `POST /api/translate-audio` (multipart form field `file`)
+
 ## Notes
 
 - Upload limit is **25MB**.

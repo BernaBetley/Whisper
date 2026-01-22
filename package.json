@@ -12,6 +12,10 @@
     "build": "npm -w client run build",
     "start": "npm -w server run start"
   },
+  "dependencies": {
+    "busboy": "^1.6.0",
+    "openai": "^6.16.0"
+  },
   "devDependencies": {
     "concurrently": "^9.2.1"
   }
