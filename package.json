@@ -1,0 +1,19 @@
+{
+  "name": "speech-translation-audio-app",
+  "private": true,
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev": "concurrently -n server,client -c blue,green \"npm -w server run dev\" \"npm -w client run dev -- --host\"",
+    "dev:client": "npm -w client run dev",
+    "dev:server": "npm -w server run dev",
+    "build": "npm -w client run build",
+    "start": "npm -w server run start"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
+
