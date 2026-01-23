@@ -8,12 +8,9 @@
   ],
   "functions": {
     "api/translate-audio.js": {
-      "runtime": "nodejs20.x",
       "maxDuration": 60
     },
-    "api/health.js": {
-      "runtime": "nodejs20.x"
-    }
+    "api/health.js": {}
   }
 }
 
