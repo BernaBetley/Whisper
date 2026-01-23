@@ -2,12 +2,146 @@ import './App.css'
 import type { FormEvent } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 
+type WhisperLanguage = { code: string; name: string }
+
+// Whisper language list (codes supported by Whisper models).
+// Source: OpenAI Whisper supported languages list (ISO-ish codes used by Whisper).
+const WHISPER_LANGUAGES: WhisperLanguage[] = [
+  { code: 'af', name: 'Afrikaans' },
+  { code: 'am', name: 'Amharic' },
+  { code: 'ar', name: 'Arabic' },
+  { code: 'as', name: 'Assamese' },
+  { code: 'az', name: 'Azerbaijani' },
+  { code: 'ba', name: 'Bashkir' },
+  { code: 'be', name: 'Belarusian' },
+  { code: 'bg', name: 'Bulgarian' },
+  { code: 'bn', name: 'Bengali' },
+  { code: 'bo', name: 'Tibetan' },
+  { code: 'br', name: 'Breton' },
+  { code: 'bs', name: 'Bosnian' },
+  { code: 'ca', name: 'Catalan' },
+  { code: 'cs', name: 'Czech' },
+  { code: 'cy', name: 'Welsh' },
+  { code: 'da', name: 'Danish' },
+  { code: 'de', name: 'German' },
+  { code: 'el', name: 'Greek' },
+  { code: 'en', name: 'English' },
+  { code: 'es', name: 'Spanish' },
+  { code: 'et', name: 'Estonian' },
+  { code: 'eu', name: 'Basque' },
+  { code: 'fa', name: 'Persian' },
+  { code: 'fi', name: 'Finnish' },
+  { code: 'fo', name: 'Faroese' },
+  { code: 'fr', name: 'French' },
+  { code: 'gl', name: 'Galician' },
+  { code: 'gu', name: 'Gujarati' },
+  { code: 'ha', name: 'Hausa' },
+  { code: 'haw', name: 'Hawaiian' },
+  { code: 'he', name: 'Hebrew' },
+  { code: 'hi', name: 'Hindi' },
+  { code: 'hr', name: 'Croatian' },
+  { code: 'ht', name: 'Haitian Creole' },
+  { code: 'hu', name: 'Hungarian' },
+  { code: 'hy', name: 'Armenian' },
+  { code: 'id', name: 'Indonesian' },
+  { code: 'is', name: 'Icelandic' },
+  { code: 'it', name: 'Italian' },
+  { code: 'ja', name: 'Japanese' },
+  { code: 'jw', name: 'Javanese' },
+  { code: 'ka', name: 'Georgian' },
+  { code: 'kk', name: 'Kazakh' },
+  { code: 'km', name: 'Khmer' },
+  { code: 'kn', name: 'Kannada' },
+  { code: 'ko', name: 'Korean' },
+  { code: 'la', name: 'Latin' },
+  { code: 'lb', name: 'Luxembourgish' },
+  { code: 'ln', name: 'Lingala' },
+  { code: 'lo', name: 'Lao' },
+  { code: 'lt', name: 'Lithuanian' },
+  { code: 'lv', name: 'Latvian' },
+  { code: 'mg', name: 'Malagasy' },
+  { code: 'mi', name: 'Maori' },
+  { code: 'mk', name: 'Macedonian' },
+  { code: 'ml', name: 'Malayalam' },
+  { code: 'mn', name: 'Mongolian' },
+  { code: 'mr', name: 'Marathi' },
+  { code: 'ms', name: 'Malay' },
+  { code: 'mt', name: 'Maltese' },
+  { code: 'my', name: 'Burmese' },
+  { code: 'ne', name: 'Nepali' },
+  { code: 'nl', name: 'Dutch' },
+  { code: 'nn', name: 'Norwegian Nynorsk' },
+  { code: 'no', name: 'Norwegian' },
+  { code: 'oc', name: 'Occitan' },
+  { code: 'pa', name: 'Punjabi' },
+  { code: 'pl', name: 'Polish' },
+  { code: 'ps', name: 'Pashto' },
+  { code: 'pt', name: 'Portuguese' },
+  { code: 'ro', name: 'Romanian' },
+  { code: 'ru', name: 'Russian' },
+  { code: 'sa', name: 'Sanskrit' },
+  { code: 'sd', name: 'Sindhi' },
+  { code: 'si', name: 'Sinhala' },
+  { code: 'sk', name: 'Slovak' },
+  { code: 'sl', name: 'Slovenian' },
+  { code: 'sn', name: 'Shona' },
+  { code: 'so', name: 'Somali' },
+  { code: 'sq', name: 'Albanian' },
+  { code: 'sr', name: 'Serbian' },
+  { code: 'su', name: 'Sundanese' },
+  { code: 'sv', name: 'Swedish' },
+  { code: 'sw', name: 'Swahili' },
+  { code: 'ta', name: 'Tamil' },
+  { code: 'te', name: 'Telugu' },
+  { code: 'tg', name: 'Tajik' },
+  { code: 'th', name: 'Thai' },
+  { code: 'tk', name: 'Turkmen' },
+  { code: 'tl', name: 'Tagalog' },
+  { code: 'tr', name: 'Turkish' },
+  { code: 'tt', name: 'Tatar' },
+  { code: 'uk', name: 'Ukrainian' },
+  { code: 'ur', name: 'Urdu' },
+  { code: 'uz', name: 'Uzbek' },
+  { code: 'vi', name: 'Vietnamese' },
+  { code: 'yi', name: 'Yiddish' },
+  { code: 'yo', name: 'Yoruba' },
+  { code: 'zh', name: 'Chinese' },
+]
+
+type OutputAudioFormat = 'mp3' | 'wav' | 'flac' | 'aac' | 'opus' | 'pcm'
+
+function inferPreferredOutputFormatFromFilename(filename: string): OutputAudioFormat {
+  const ext = filename.split('.').pop()?.toLowerCase() ?? ''
+  switch (ext) {
+    case 'mp3':
+      return 'mp3'
+    case 'wav':
+      return 'wav'
+    case 'flac':
+      return 'flac'
+    case 'aac':
+      return 'aac'
+    case 'opus':
+      return 'opus'
+    case 'ogg':
+    case 'oga':
+      return 'opus'
+    case 'm4a':
+      // m4a is typically AAC-in-MP4; closest TTS output is raw AAC.
+      return 'aac'
+    default:
+      return 'mp3'
+  }
+}
+
 function App() {
   const [file, setFile] = useState<File | null>(null)
   const [sourceLanguage, setSourceLanguage] = useState<string>('auto')
-  const [targetLanguage, setTargetLanguage] = useState<string>('Spanish')
+  const [targetLanguagePreset, setTargetLanguagePreset] = useState<string>('es')
+  const [useCustomTargetLanguage, setUseCustomTargetLanguage] = useState<boolean>(false)
+  const [targetLanguageCustom, setTargetLanguageCustom] = useState<string>('Spanish')
   const [voice, setVoice] = useState<string>('cedar')
-  const [responseFormat, setResponseFormat] = useState<'mp3' | 'wav' | 'flac'>('mp3')
+  const [responseFormat, setResponseFormat] = useState<OutputAudioFormat>('mp3')
   const [styleNotes, setStyleNotes] = useState<string>('')
 
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -21,27 +155,6 @@ function App() {
   const downloadFilename = useMemo(
     () => `translated.${responseFormat}`,
     [responseFormat],
-  )
-
-  const languageSuggestions = useMemo(
-    () => [
-      'English',
-      'Spanish',
-      'French',
-      'German',
-      'Italian',
-      'Portuguese',
-      'Arabic',
-      'Hindi',
-      'Japanese',
-      'Korean',
-      'Chinese (Simplified)',
-      'Russian',
-      'Turkish',
-      'Vietnamese',
-      'Thai',
-    ],
-    [],
   )
 
   const voiceOptions = useMemo(() => ['cedar', 'alloy', 'coral'], [])
@@ -63,7 +176,10 @@ function App() {
       setError('Please choose an audio file to upload.')
       return
     }
-    if (!targetLanguage.trim()) {
+    const targetLanguage = useCustomTargetLanguage
+      ? targetLanguageCustom.trim()
+      : targetLanguagePreset.trim()
+    if (!targetLanguage) {
       setError('Please choose a target language.')
       return
     }
@@ -135,7 +251,11 @@ function App() {
             <input
               type="file"
               accept="audio/*,.mp3,.mp4,.mpeg,.mpga,.m4a,.wav,.webm,.aac,.ogg,.oga,.opus"
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              onChange={(e) => {
+                const next = e.target.files?.[0] ?? null
+                setFile(next)
+                if (next) setResponseFormat(inferPreferredOutputFormatFromFilename(next.name))
+              }}
               disabled={isSubmitting}
             />
             {file ? (
@@ -149,26 +269,58 @@ function App() {
 
           <label className="field">
             <span className="label">Source language</span>
-            <input
-              list="languages"
+            <select
               value={sourceLanguage}
               onChange={(e) => setSourceLanguage(e.target.value)}
               disabled={isSubmitting}
-              placeholder="auto"
-            />
-            <span className="hint">Use “auto”, or a language name, or a code like “en”, “es”, “pt-BR”.</span>
+            >
+              <option value="auto">Auto-detect</option>
+              {WHISPER_LANGUAGES.map((l) => (
+                <option key={l.code} value={l.code}>
+                  {l.name} ({l.code})
+                </option>
+              ))}
+            </select>
+            <span className="hint">This dropdown is the full Whisper language set (or auto-detect).</span>
           </label>
 
           <label className="field">
             <span className="label">Target language</span>
-            <input
-              list="languages"
-              value={targetLanguage}
-              onChange={(e) => setTargetLanguage(e.target.value)}
-              disabled={isSubmitting}
-              required
-            />
-            <span className="hint">Example: “Spanish” or “Arabic (Saudi, Najdi slang)”.</span>
+            {!useCustomTargetLanguage ? (
+              <>
+                <select
+                  value={targetLanguagePreset}
+                  onChange={(e) => setTargetLanguagePreset(e.target.value)}
+                  disabled={isSubmitting}
+                >
+                  {WHISPER_LANGUAGES.map((l) => (
+                    <option key={l.code} value={l.code}>
+                      {l.name} ({l.code})
+                    </option>
+                  ))}
+                </select>
+                <span className="hint">Select a Whisper language, or switch to custom for dialects/notes.</span>
+              </>
+            ) : (
+              <>
+                <input
+                  value={targetLanguageCustom}
+                  onChange={(e) => setTargetLanguageCustom(e.target.value)}
+                  disabled={isSubmitting}
+                  placeholder="e.g. Arabic (Saudi, Najdi slang)"
+                />
+                <span className="hint">Custom target language text (useful for dialects or style constraints).</span>
+              </>
+            )}
+            <label className="hint" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input
+                type="checkbox"
+                checked={useCustomTargetLanguage}
+                onChange={(e) => setUseCustomTargetLanguage(e.target.checked)}
+                disabled={isSubmitting}
+              />
+              Use custom target language
+            </label>
           </label>
 
           <label className="field">
@@ -190,13 +342,17 @@ function App() {
             <span className="label">Output format</span>
             <select
               value={responseFormat}
-              onChange={(e) => setResponseFormat(e.target.value as 'mp3' | 'wav' | 'flac')}
+              onChange={(e) => setResponseFormat(e.target.value as OutputAudioFormat)}
               disabled={isSubmitting}
             >
               <option value="mp3">mp3</option>
               <option value="wav">wav</option>
               <option value="flac">flac</option>
+              <option value="aac">aac</option>
+              <option value="opus">opus</option>
+              <option value="pcm">pcm</option>
             </select>
+            <span className="hint">Defaults to “match input” when possible. Note: m4a/mp4 are containers; TTS outputs audio codecs/streams.</span>
           </label>
 
           <label className="field fieldFull">
@@ -210,12 +366,6 @@ function App() {
             />
           </label>
         </div>
-
-        <datalist id="languages">
-          {languageSuggestions.map((l) => (
-            <option key={l} value={l} />
-          ))}
-        </datalist>
 
         <div className="actions">
           <button type="submit" disabled={isSubmitting}>

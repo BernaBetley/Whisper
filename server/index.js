@@ -45,7 +45,10 @@ const TranslateAudioBody = z.object({
   sourceLanguage: z.string().trim().optional().default("auto"),
   targetLanguage: z.string().trim().min(1),
   voice: z.string().trim().optional().default("cedar"),
-  responseFormat: z.enum(["mp3", "wav", "flac"]).optional().default("mp3"),
+  responseFormat: z
+    .enum(["mp3", "wav", "flac", "aac", "opus", "pcm"])
+    .optional()
+    .default("mp3"),
   styleNotes: z.string().trim().optional().default(""),
 });
 
@@ -55,6 +58,12 @@ function guessAudioContentType(responseFormat) {
       return "audio/wav";
     case "flac":
       return "audio/flac";
+    case "opus":
+      return "audio/opus";
+    case "aac":
+      return "audio/aac";
+    case "pcm":
+      return "application/octet-stream";
     case "mp3":
     default:
       return "audio/mpeg";
@@ -65,6 +74,108 @@ function shouldSendLanguageCode(lang) {
   // OpenAI STT "language" param expects a BCP-47-ish short code in practice (e.g. "en", "es", "pt-BR").
   return /^[a-z]{2}(-[A-Z]{2})?$/.test(lang);
 }
+
+const WHISPER_LANGUAGE_NAMES = {
+  af: "Afrikaans",
+  am: "Amharic",
+  ar: "Arabic",
+  as: "Assamese",
+  az: "Azerbaijani",
+  ba: "Bashkir",
+  be: "Belarusian",
+  bg: "Bulgarian",
+  bn: "Bengali",
+  bo: "Tibetan",
+  br: "Breton",
+  bs: "Bosnian",
+  ca: "Catalan",
+  cs: "Czech",
+  cy: "Welsh",
+  da: "Danish",
+  de: "German",
+  el: "Greek",
+  en: "English",
+  es: "Spanish",
+  et: "Estonian",
+  eu: "Basque",
+  fa: "Persian",
+  fi: "Finnish",
+  fo: "Faroese",
+  fr: "French",
+  gl: "Galician",
+  gu: "Gujarati",
+  ha: "Hausa",
+  haw: "Hawaiian",
+  he: "Hebrew",
+  hi: "Hindi",
+  hr: "Croatian",
+  ht: "Haitian Creole",
+  hu: "Hungarian",
+  hy: "Armenian",
+  id: "Indonesian",
+  is: "Icelandic",
+  it: "Italian",
+  ja: "Japanese",
+  jw: "Javanese",
+  ka: "Georgian",
+  kk: "Kazakh",
+  km: "Khmer",
+  kn: "Kannada",
+  ko: "Korean",
+  la: "Latin",
+  lb: "Luxembourgish",
+  ln: "Lingala",
+  lo: "Lao",
+  lt: "Lithuanian",
+  lv: "Latvian",
+  mg: "Malagasy",
+  mi: "Maori",
+  mk: "Macedonian",
+  ml: "Malayalam",
+  mn: "Mongolian",
+  mr: "Marathi",
+  ms: "Malay",
+  mt: "Maltese",
+  my: "Burmese",
+  ne: "Nepali",
+  nl: "Dutch",
+  nn: "Norwegian Nynorsk",
+  no: "Norwegian",
+  oc: "Occitan",
+  pa: "Punjabi",
+  pl: "Polish",
+  ps: "Pashto",
+  pt: "Portuguese",
+  ro: "Romanian",
+  ru: "Russian",
+  sa: "Sanskrit",
+  sd: "Sindhi",
+  si: "Sinhala",
+  sk: "Slovak",
+  sl: "Slovenian",
+  sn: "Shona",
+  so: "Somali",
+  sq: "Albanian",
+  sr: "Serbian",
+  su: "Sundanese",
+  sv: "Swedish",
+  sw: "Swahili",
+  ta: "Tamil",
+  te: "Telugu",
+  tg: "Tajik",
+  th: "Thai",
+  tk: "Turkmen",
+  tl: "Tagalog",
+  tr: "Turkish",
+  tt: "Tatar",
+  uk: "Ukrainian",
+  ur: "Urdu",
+  uz: "Uzbek",
+  vi: "Vietnamese",
+  yi: "Yiddish",
+  yo: "Yoruba",
+  zh: "Chinese",
+};
 
 app.post("/api/translate-audio", upload.single("file"), async (req, res) => {
   try {
@@ -119,10 +230,17 @@ app.post("/api/translate-audio", upload.single("file"), async (req, res) => {
       transcriptText = transcription.text ?? "";
 
       // 2) Text -> target language text
-      const translationPrompt = [
+      const targetLanguageForPrompt =
+        WHISPER_LANGUAGE_NAMES[targetLanguage] ?? targetLanguage;
+      const sourceLanguageForPrompt =
         sourceLanguage && sourceLanguage !== "auto"
-          ? `Translate from ${sourceLanguage} into ${targetLanguage}.`
-          : `Translate into ${targetLanguage}.`,
+          ? WHISPER_LANGUAGE_NAMES[sourceLanguage] ?? sourceLanguage
+          : null;
+
+      const translationPrompt = [
+        sourceLanguageForPrompt
+          ? `Translate from ${sourceLanguageForPrompt} into ${targetLanguageForPrompt}.`
+          : `Translate into ${targetLanguageForPrompt}.`,
         "Keep it natural and conversational.",
         "Do not add new information. Preserve meaning, names, numbers, and intent.",
         styleNotes ? `Style notes: ${styleNotes}` : "",

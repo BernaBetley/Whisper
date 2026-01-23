@@ -58,6 +58,7 @@ After deploy:
 ## Notes
 
 - Upload limit is **50MB** (the app enforces this; upstream providers may still have their own limits).
-- Source language can be `auto`, a language name (e.g. `French`), or a short code like `en`, `es`, `pt-BR`.
+- Source/target language dropdowns use the **full Whisper language set** (codes like `en`, `es`, `pt`). You can also switch the target language to a **custom** free-text value for dialects (e.g. `Arabic (Saudi, Najdi slang)`).
 - The UI shows transcript/translation text only for reference (trimmed for header safety).
+- TTS output formats supported by this app: `mp3`, `wav`, `flac`, `aac`, `opus`, `pcm`. (Input containers like `m4a`/`mp4` can be uploaded, but TTS does not output those containers directly.)
 
