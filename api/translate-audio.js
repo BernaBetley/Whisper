@@ -80,12 +80,16 @@ function parseMultipartToTempFile(req) {
     bb.on("finish", async () => {
       try {
         if (!sawFile || !tmpPath || !fileWritePromise) {
-          reject(new Error("Missing audio file (form field: file)."));
+          const e = new Error("Missing audio file (form field: file).");
+          e.code = "MISSING_FILE";
+          reject(e);
           return;
         }
         await fileWritePromise;
         if (fileTooLarge) {
-          reject(new Error("File too large (max 50MB)."));
+          const e = new Error("File too large (max 50MB).");
+          e.code = "FILE_TOO_LARGE";
+          reject(e);
           return;
         }
         resolve({ fields, tmpPath, originalName });
@@ -122,7 +126,12 @@ module.exports = async (req, res) => {
   if (!apiKey) {
     res.statusCode = 500;
     res.setHeader("Content-Type", "application/json");
-    res.end(JSON.stringify({ error: "Missing OPENAI_API_KEY." }));
+    res.end(
+      JSON.stringify({
+        error:
+          "Missing OPENAI_API_KEY. Set it in your Vercel project env vars (Production/Preview/Development) and redeploy.",
+      }),
+    );
     return;
   }
 
@@ -335,14 +344,26 @@ module.exports = async (req, res) => {
     res.end(buffer);
   } catch (err) {
     console.error(err);
-    res.statusCode = 500;
+    const code = err && typeof err === "object" ? err.code : undefined;
+    const message = err instanceof Error ? err.message : "Server error processing audio.";
+
+    // Common upload/validation failures should be explicit and non-500.
+    if (code === "FILE_TOO_LARGE" || /too large/i.test(message)) {
+      res.statusCode = 413;
+    } else if (code === "MISSING_FILE" || /missing audio file/i.test(message)) {
+      res.statusCode = 400;
+    } else {
+      // Try to preserve upstream status codes if present (OpenAI errors).
+      const maybeStatus = err && typeof err === "object" ? err.status : undefined;
+      res.statusCode =
+        typeof maybeStatus === "number" && maybeStatus >= 400 && maybeStatus <= 599
+          ? maybeStatus
+          : 500;
+    }
     res.setHeader("Content-Type", "application/json");
     res.end(
       JSON.stringify({
-        error:
-          err instanceof Error
-            ? err.message
-            : "Server error processing audio.",
+        error: message,
       }),
     );
   } finally {

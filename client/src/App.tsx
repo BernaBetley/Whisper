@@ -110,6 +110,8 @@ const WHISPER_LANGUAGES: WhisperLanguage[] = [
 
 type OutputAudioFormat = 'mp3' | 'wav' | 'flac' | 'aac' | 'opus' | 'pcm'
 
+const MAX_UPLOAD_BYTES = 50 * 1024 * 1024
+
 function inferPreferredOutputFormatFromFilename(filename: string): OutputAudioFormat {
   const ext = filename.split('.').pop()?.toLowerCase() ?? ''
   switch (ext) {
@@ -176,6 +178,10 @@ function App() {
       setError('Please choose an audio file to upload.')
       return
     }
+    if (file.size > MAX_UPLOAD_BYTES) {
+      setError('File too large. Please choose a file up to 50MB.')
+      return
+    }
     const targetLanguage = useCustomTargetLanguage
       ? targetLanguageCustom.trim()
       : targetLanguagePreset.trim()
@@ -211,7 +217,12 @@ function App() {
           if (typeof j?.error === 'string') message = j.error
           else if (j?.error) message = JSON.stringify(j.error)
         } catch {
-          // ignore
+          try {
+            const t = await resp.text()
+            if (t) message = `${message} ${t}`
+          } catch {
+            // ignore
+          }
         }
         setError(message)
         return
